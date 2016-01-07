@@ -1,0 +1,2 @@
+[production]
+54.229.217.133 ansible_ssh_connection=ssh  ansible_ssh_user=ubuntu

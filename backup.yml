@@ -1,0 +1,11 @@
+---
+# file: backup.yml
+
+- hosts: production
+  remote_user: ubuntu
+  tasks:
+    - name: dump all postgres databases
+      shell: pg_dumpall -w -f /tmp/backup.psql
+      sudo: True
+      sudo_user: postgres
+      remote_user: postgres
