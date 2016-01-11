@@ -1,0 +1,38 @@
+---
+# file: upgradeya.yml
+
+- hosts: staging
+  vars:
+    site: "default"
+    version: "release-v2.4-latest"
+  remote_user: ubuntu
+  tasks:
+    - name: Discard local changes
+      action: command chdir=/usr/lib/ckan/{{ site }}/src/ckan/ git clean -dfx
+
+    - name: Checkout version
+      action: git repo=https://github.com/okfn/ckan dest=/usr/lib/ckan/{{ site }}/src/ckan version={{ version }} force=yes
+
+    - name: Pull code
+      action: command chdir=/usr/lib/ckan/{{ site }}/src/ckan/ git pull
+      register: update
+
+    - name: Run setup.py develop for ckan
+      action: command chdir=/usr/lib/ckan/{{ site }}/src/ckan/ ../../bin/python setup.py develop
+      when: update.changed
+
+    - name: Upgrade db 
+      action: command /usr/lib/ckan/{{ site }}/bin/paster --plugin=ckan db upgrade -c /etc/ckan/{{ site }}/production.ini 
+      when: update.changed 
+ 
+    - name: Rebuild search index 
+      action: command /usr/lib/ckan/{{ site }}/bin/paster --plugin=ckan search-index rebuild -c /etc/ckan/{{ site }}/production.ini 
+      when: update.changed 
+ 
+    - name: Rebuild front end 
+      action: command /usr/lib/ckan/{{ site }}/bin/paster --plugin=ckan front-end-build -c /etc/ckan/{{ site }}/production.ini 
+      when: update.changed 
+ 
+    - name: Restart Apache 
+      action: service name=apache2 state=restarted 
+      when: update.changed
