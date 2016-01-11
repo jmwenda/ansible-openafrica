@@ -4,7 +4,7 @@
 - hosts: staging
   vars:
     site: "default"
-    version: "release-v2.4-latest"
+    version: "release-v2.5-latest"
   remote_user: ubuntu
   tasks:
     - name: Discard local changes
@@ -20,6 +20,12 @@
     - name: Run setup.py develop for ckan
       action: command chdir=/usr/lib/ckan/{{ site }}/src/ckan/ ../../bin/python setup.py develop
       when: update.changed
+
+    - name: virtualenv activate
+      shell: source /usr/lib/ckan/{{site}}/bin/activate 
+
+    - name: install requirements
+      pip: requirements=/usr/lib/ckan/{{ site }}/src/ckan/requirements.txt
 
     - name: Upgrade db 
       action: command /usr/lib/ckan/{{ site }}/bin/paster --plugin=ckan db upgrade -c /etc/ckan/{{ site }}/production.ini 
